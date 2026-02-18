@@ -1,0 +1,119 @@
+name: Update ROSA
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM UTC
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  update-rosa:
+    name: Check for ROSA updates
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v14
+
+      - name: Setup Nix cache
+        uses: DeterminateSystems/magic-nix-cache-action@v8
+
+      - name: Check for new rosa release
+        id: check-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Get latest release version from GitHub
+          latest_version=$(gh release list --repo openshift/rosa --limit 1 --json tagName --jq '.[0].tagName')
+          echo "Latest version: $latest_version"
+          echo "latest_version=$latest_version" >> $GITHUB_OUTPUT
+
+          # Get current version from flake.nix
+          current_version=$(grep -oP 'version = "\K[^"]+' flake.nix)
+          echo "Current version: $current_version"
+          echo "current_version=$current_version" >> $GITHUB_OUTPUT
+
+          # Compare versions
+          if [ "v$current_version" = "$latest_version" ]; then
+            echo "Already up to date"
+            echo "needs_update=false" >> $GITHUB_OUTPUT
+          else
+            echo "Update available: v$current_version -> $latest_version"
+            echo "needs_update=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Compute new hashes
+        if: steps.check-release.outputs.needs_update == 'true'
+        id: compute-hashes
+        run: |
+          VERSION="${{ steps.check-release.outputs.latest_version }}"
+          VERSION_NUM="${VERSION#v}"
+
+          echo "Computing hashes for version $VERSION_NUM..."
+
+          # Compute hash for x86_64-linux
+          url="https://github.com/openshift/rosa/releases/download/${VERSION}/rosa_Linux_x86_64.tar.gz"
+          hash=$(nix-prefetch-url --type sha256 "$url" 2>/dev/null)
+          x86_64_linux_hash=$(nix hash convert --to sri "sha256:$hash")
+          echo "x86_64_linux_hash=$x86_64_linux_hash" >> $GITHUB_OUTPUT
+
+          # Compute hash for aarch64-linux
+          url="https://github.com/openshift/rosa/releases/download/${VERSION}/rosa_Linux_arm64.tar.gz"
+          hash=$(nix-prefetch-url --type sha256 "$url" 2>/dev/null)
+          aarch64_linux_hash=$(nix hash convert --to sri "sha256:$hash")
+          echo "aarch64_linux_hash=$aarch64_linux_hash" >> $GITHUB_OUTPUT
+
+          # Compute hash for x86_64-darwin
+          url="https://github.com/openshift/rosa/releases/download/${VERSION}/rosa_Darwin_x86_64.tar.gz"
+          hash=$(nix-prefetch-url --type sha256 "$url" 2>/dev/null)
+          x86_64_darwin_hash=$(nix hash convert --to sri "sha256:$hash")
+          echo "x86_64_darwin_hash=$x86_64_darwin_hash" >> $GITHUB_OUTPUT
+
+          # Compute hash for aarch64-darwin
+          url="https://github.com/openshift/rosa/releases/download/${VERSION}/rosa_Darwin_arm64.tar.gz"
+          hash=$(nix-prefetch-url --type sha256 "$url" 2>/dev/null)
+          aarch64_darwin_hash=$(nix hash convert --to sri "sha256:$hash")
+          echo "aarch64_darwin_hash=$aarch64_darwin_hash" >> $GITHUB_OUTPUT
+
+      - name: Update flake.nix
+        if: steps.check-release.outputs.needs_update == 'true'
+        run: |
+          VERSION="${{ steps.check-release.outputs.latest_version }}"
+          VERSION_NUM="${VERSION#v}"
+
+          # Update version
+          sed -i "s/version = \"[^\"]*\"/version = \"$VERSION_NUM\"/" flake.nix
+
+          # Update hashes
+          sed -i "/x86_64-linux = {/,/};/{s|sha256 = \"[^\"]*\"|sha256 = \"${{ steps.compute-hashes.outputs.x86_64_linux_hash }}\"|}" flake.nix
+          sed -i "/aarch64-linux = {/,/};/{s|sha256 = \"[^\"]*\"|sha256 = \"${{ steps.compute-hashes.outputs.aarch64_linux_hash }}\"|}" flake.nix
+          sed -i "/x86_64-darwin = {/,/};/{s|sha256 = \"[^\"]*\"|sha256 = \"${{ steps.compute-hashes.outputs.x86_64_darwin_hash }}\"|}" flake.nix
+          sed -i "/aarch64-darwin = {/,/};/{s|sha256 = \"[^\"]*\"|sha256 = \"${{ steps.compute-hashes.outputs.aarch64_darwin_hash }}\"|}" flake.nix
+
+      - name: Test updated package
+        if: steps.check-release.outputs.needs_update == 'true'
+        run: |
+          nix flake check
+          nix build .#rosa
+          ./result/bin/rosa version
+
+      - name: Create Pull Request
+        if: steps.check-release.outputs.needs_update == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update rosa to ${{ steps.check-release.outputs.latest_version }}"
+          title: "Update rosa to ${{ steps.check-release.outputs.latest_version }}"
+          body: |
+            Automated update to rosa ${{ steps.check-release.outputs.latest_version }}
+
+            Release notes: https://github.com/openshift/rosa/releases/tag/${{ steps.check-release.outputs.latest_version }}
+
+            This PR was automatically generated by the update-rosa workflow.
+          branch: update-rosa-${{ steps.check-release.outputs.latest_version }}
+          delete-branch: true
