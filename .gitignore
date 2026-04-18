@@ -1,7 +1,7 @@
 result
 result-*
 .direnv/
-.envrc
+.envrc.local
 .vscode/
 .idea/
 *.swp

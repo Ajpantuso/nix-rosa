@@ -101,4 +101,4 @@ The workflow supports:
 
 ## License
 
-MIT
+This repository is released into the public domain under the [UNLICENSE](UNLICENSE).
