@@ -16,19 +16,19 @@ echo "Computing hashes for rosa version $VERSION_NUM..."
 echo ""
 
 PLATFORMS=(
-  "Linux_x86_64:x86_64-linux"
-  "Linux_arm64:aarch64-linux"
-  "Darwin_x86_64:x86_64-darwin"
-  "Darwin_arm64:aarch64-darwin"
+  "linux_amd64:x86_64-linux"
+  "linux_arm64:aarch64-linux"
+  "darwin_amd64:x86_64-darwin"
+  "darwin_arm64:aarch64-darwin"
 )
 
 for platform_info in "${PLATFORMS[@]}"; do
   IFS=':' read -r platform_name nix_platform <<< "$platform_info"
 
-  url="https://github.com/openshift/rosa/releases/download/v${VERSION_NUM}/rosa_${platform_name}.tar.gz"
+  url="https://github.com/openshift/rosa/releases/download/v${VERSION_NUM}/rosa_${platform_name}.zip"
 
   echo "Fetching $nix_platform..."
-  hash=$(nix-prefetch-url --type sha256 "$url" 2>/dev/null)
+  hash=$(nix-prefetch-url --type sha256 "$url")
   sri_hash=$(nix hash convert --to sri "sha256:$hash")
 
   echo "  $nix_platform = {"

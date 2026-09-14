@@ -10,24 +10,24 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        version = "1.2.64";
+        version = "1.2.65";
 
         sources = {
           x86_64-linux = {
-            url = "https://github.com/openshift/rosa/releases/download/v${version}/rosa_Linux_x86_64.tar.gz";
-            sha256 = "sha256-rar3kEtLYwZksONgWJ/A52B/LafL6m3E7eKcin/cuKI=";
+            url = "https://github.com/openshift/rosa/releases/download/v${version}/rosa_linux_amd64.zip";
+            sha256 = "sha256-ADy1x9IfrUqXpvvh0RTsMlCvsnZNMzmlAG2CMOt0Se4=";
           };
           aarch64-linux = {
-            url = "https://github.com/openshift/rosa/releases/download/v${version}/rosa_Linux_arm64.tar.gz";
-            sha256 = "sha256-uaLyzXbnoftj2Fj/kyoGFUApQLpQNZxK0bXuXGL4Khw=";
+            url = "https://github.com/openshift/rosa/releases/download/v${version}/rosa_linux_arm64.zip";
+            sha256 = "sha256-Ek7r+DXE8SqQIzRgHB2aRui6PwUSrtyvP1BVOkgLrpA=";
           };
           x86_64-darwin = {
-            url = "https://github.com/openshift/rosa/releases/download/v${version}/rosa_Darwin_x86_64.tar.gz";
-            sha256 = "sha256-gxtu7DuA1+PjYgZ/RF13I2tp2BXIbQj9xVQ4RUZjNi8=";
+            url = "https://github.com/openshift/rosa/releases/download/v${version}/rosa_darwin_amd64.zip";
+            sha256 = "sha256-1qy3eFauxaBAtMeMMlIzjrefKnh7k8WSN3nADKsvrnk=";
           };
           aarch64-darwin = {
-            url = "https://github.com/openshift/rosa/releases/download/v${version}/rosa_Darwin_arm64.tar.gz";
-            sha256 = "sha256-/3Sv7pJzG4uD08WqyeJjVMIzNjL8Hcditf4iG+cXeaE=";
+            url = "https://github.com/openshift/rosa/releases/download/v${version}/rosa_darwin_arm64.zip";
+            sha256 = "sha256-RG7wq4mvextAMht9ZcFVO0Ld53xHETp93ph/vKa9ZGY=";
           };
         };
 
@@ -40,6 +40,8 @@
           src = pkgs.fetchurl {
             inherit (source) url sha256;
           };
+
+          nativeBuildInputs = [ pkgs.unzip ];
 
           sourceRoot = ".";
 

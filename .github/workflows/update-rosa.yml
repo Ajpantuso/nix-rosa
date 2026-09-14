@@ -15,13 +15,17 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v14
+        uses: DeterminateSystems/nix-installer-action@v23
+        with:
+          determinate: false
 
       - name: Setup Nix cache
-        uses: DeterminateSystems/magic-nix-cache-action@v8
+        uses: DeterminateSystems/magic-nix-cache-action@v14
+        with:
+          use-flakehub: false
 
       - name: Check for new rosa release
         id: check-release
@@ -57,26 +61,26 @@ jobs:
           echo "Computing hashes for version $VERSION_NUM..."
 
           # Compute hash for x86_64-linux
-          url="https://github.com/openshift/rosa/releases/download/${VERSION}/rosa_Linux_x86_64.tar.gz"
-          hash=$(nix-prefetch-url --type sha256 "$url" 2>/dev/null)
+          url="https://github.com/openshift/rosa/releases/download/${VERSION}/rosa_linux_amd64.zip"
+          hash=$(nix-prefetch-url --type sha256 "$url")
           x86_64_linux_hash=$(nix hash convert --to sri "sha256:$hash")
           echo "x86_64_linux_hash=$x86_64_linux_hash" >> $GITHUB_OUTPUT
 
           # Compute hash for aarch64-linux
-          url="https://github.com/openshift/rosa/releases/download/${VERSION}/rosa_Linux_arm64.tar.gz"
-          hash=$(nix-prefetch-url --type sha256 "$url" 2>/dev/null)
+          url="https://github.com/openshift/rosa/releases/download/${VERSION}/rosa_linux_arm64.zip"
+          hash=$(nix-prefetch-url --type sha256 "$url")
           aarch64_linux_hash=$(nix hash convert --to sri "sha256:$hash")
           echo "aarch64_linux_hash=$aarch64_linux_hash" >> $GITHUB_OUTPUT
 
           # Compute hash for x86_64-darwin
-          url="https://github.com/openshift/rosa/releases/download/${VERSION}/rosa_Darwin_x86_64.tar.gz"
-          hash=$(nix-prefetch-url --type sha256 "$url" 2>/dev/null)
+          url="https://github.com/openshift/rosa/releases/download/${VERSION}/rosa_darwin_amd64.zip"
+          hash=$(nix-prefetch-url --type sha256 "$url")
           x86_64_darwin_hash=$(nix hash convert --to sri "sha256:$hash")
           echo "x86_64_darwin_hash=$x86_64_darwin_hash" >> $GITHUB_OUTPUT
 
           # Compute hash for aarch64-darwin
-          url="https://github.com/openshift/rosa/releases/download/${VERSION}/rosa_Darwin_arm64.tar.gz"
-          hash=$(nix-prefetch-url --type sha256 "$url" 2>/dev/null)
+          url="https://github.com/openshift/rosa/releases/download/${VERSION}/rosa_darwin_arm64.zip"
+          hash=$(nix-prefetch-url --type sha256 "$url")
           aarch64_darwin_hash=$(nix hash convert --to sri "sha256:$hash")
           echo "aarch64_darwin_hash=$aarch64_darwin_hash" >> $GITHUB_OUTPUT
 
@@ -104,7 +108,7 @@ jobs:
 
       - name: Create Pull Request
         if: steps.check-release.outputs.needs_update == 'true'
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "Update rosa to ${{ steps.check-release.outputs.latest_version }}"
