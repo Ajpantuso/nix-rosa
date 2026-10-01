@@ -10,24 +10,24 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-        version = "1.2.65";
+        version = "1.2.66-prerelease.1";
 
         sources = {
           x86_64-linux = {
             url = "https://github.com/openshift/rosa/releases/download/v${version}/rosa_linux_amd64.zip";
-            sha256 = "sha256-ADy1x9IfrUqXpvvh0RTsMlCvsnZNMzmlAG2CMOt0Se4=";
+            sha256 = "sha256-s+RvwnRBnXezuNlaahVdpU7XvNrq5PT/8LYycZ+PIHo=";
           };
           aarch64-linux = {
             url = "https://github.com/openshift/rosa/releases/download/v${version}/rosa_linux_arm64.zip";
-            sha256 = "sha256-Ek7r+DXE8SqQIzRgHB2aRui6PwUSrtyvP1BVOkgLrpA=";
+            sha256 = "sha256-gavi4R9ZQ6PM91Ma5O7ZTvtEB8rJAwSgwBpYWX/reYQ=";
           };
           x86_64-darwin = {
             url = "https://github.com/openshift/rosa/releases/download/v${version}/rosa_darwin_amd64.zip";
-            sha256 = "sha256-1qy3eFauxaBAtMeMMlIzjrefKnh7k8WSN3nADKsvrnk=";
+            sha256 = "sha256-TusXOgsT5V+dOWJpMBpcqO+Q4XaqQgf3o2SFzw7ipCU=";
           };
           aarch64-darwin = {
             url = "https://github.com/openshift/rosa/releases/download/v${version}/rosa_darwin_arm64.zip";
-            sha256 = "sha256-RG7wq4mvextAMht9ZcFVO0Ld53xHETp93ph/vKa9ZGY=";
+            sha256 = "sha256-9h+ypBt0Sad/wcNXzU6brfvOOvEZh9s+Di02pDAZjAY=";
           };
         };
 
